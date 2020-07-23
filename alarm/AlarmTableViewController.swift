@@ -25,7 +25,6 @@ class AlarmTableViewController: UITableViewController {
     
     }
 
-    // MARK: - Table view data source
 
     override func numberOfSections(in tableView: UITableView) -> Int {
         return 1
@@ -46,6 +45,19 @@ class AlarmTableViewController: UITableViewController {
         return 100
     }
 
+    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        if editingStyle == .delete {
+            tableView.beginUpdates()
+            if allAlarms[indexPath.row].idNotification != nil {
+                 UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [allAlarms[indexPath.row].idNotification!])
+            }
+            allAlarms.remove(at: indexPath.row)
+            tableView.deleteRows(at: [indexPath], with: .fade)
+            tableView.endUpdates()
+           
+            
+        }
+    }
     
 
 }
@@ -78,16 +90,14 @@ private extension AlarmTableViewController {
         let attachment = try! UNNotificationAttachment(identifier: imageName, url: imageURL!, options: .none)
         
         content.attachments = [attachment]
-
+        
         let triggerDate = Calendar.current.dateComponents([.hour,.minute], from: alarm.alarmTime)
-        let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: false)
-
+        let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: true)
+        
         let request = UNNotificationRequest(identifier: "\(UUID().uuidString)", content: content, trigger: trigger)
         
         alarm.idNotification = request.identifier
-        print(alarm.idNotification)
-        
-         UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
+        UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
     }
     
     func listNotifications() {
@@ -113,8 +123,13 @@ private extension AlarmTableViewController {
         self.present(navC, animated: true, completion: nil)
     }
     
+    @objc func editTapped() {
+        tableView.isEditing = !tableView.isEditing
+    }
+    
     func setUpNavigationBar() {
           self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addAlarm))
+        self.navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .edit, target: self, action: #selector(editTapped))
           self.navigationItem.title = "Your alarms"
       }
       
